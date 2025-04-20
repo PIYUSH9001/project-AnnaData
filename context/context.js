@@ -8,9 +8,19 @@ import { MMKV } from "react-native-mmkv";
 
 const storage = new MMKV();
 export const AppProvider = ({ children }) => {
-    const [userLocation, setLocation] = useState(null);
     const cacheLocationKey = 'cacheLocationKey91';
-    const cachedLocation = storage.getString(cacheLocationKey);
+    const cacheUnitKey = 'cacheUnitKey91';
+    const [userLocation, setLocation] = useState(null);
+    const [selectedUnit, setUnit] = useState(() => {
+        const cachedUnit = storage.getString(cacheUnitKey);
+        if (cachedUnit) {
+            const { Unit } = JSON.parse(cachedUnit);
+            return Unit?Unit:1;
+        }
+    });
+
+
+
     // Function for requesting user's location
 
     async function requestLocationPermission() {
@@ -51,9 +61,10 @@ export const AppProvider = ({ children }) => {
     }
 
     async function getUserLocation() {
-        if(cachedLocation){
-            const { timeStamp,location } = JSON.parse(cachedLocation);
-            if(location && Date.now() - timeStamp < 12 * 60 * 60 * 1000){
+        const cachedLocation = storage.getString(cacheLocationKey);
+        if (cachedLocation) {
+            const { timeStamp, location } = JSON.parse(cachedLocation);
+            if (location && Date.now() - timeStamp < 12 * 60 * 60 * 1000) {
                 setLocation(location);
                 return;
             }
@@ -63,12 +74,19 @@ export const AppProvider = ({ children }) => {
             try {
                 let response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coOrds.latitude}&lon=${coOrds.longitude}`);
                 response = await response.json();
-                storage.set(cacheLocationKey,JSON.stringify({timeStamp:Date.now(),location:response.address}));
+                storage.set(cacheLocationKey, JSON.stringify({ timeStamp: Date.now(), location: response.address }));
                 setLocation(response.address);
             }
             catch (error) {
                 Alert.alert(String(error));
             }
+        }
+    }
+    function saveSelectedUnit() {
+        const existingValue = storage.getString(cacheUnitKey);
+        const newValue = JSON.stringify({ Unit: selectedUnit });
+        if (existingValue !== newValue) {
+            storage.set(cacheUnitKey, newValue);
         }
     }
     useEffect(() => {
@@ -79,6 +97,9 @@ export const AppProvider = ({ children }) => {
             {
                 getUserLocation,
                 userLocation,
+                selectedUnit,
+                setUnit,
+                saveSelectedUnit
             }
         } >
             {children}

@@ -3,7 +3,7 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { scale } from "react-native-size-matters";
 import PotatoImage from '../images/itemBackground.jpg'
 import Icon from 'react-native-vector-icons/Ionicons';
-export default function ItemCard({commodityHeading,state,district,market,variety,grade,arrivalTime,minPrice,avgPrice,maxPrice}) {
+export default function ItemCard({commodityHeading,state,district,market,variety,grade,arrivalTime,minPrice,avgPrice,maxPrice,selectedUnit}) {
     return (
         <View style={styles.card}>
             <Image source={PotatoImage} style={styles.cardImage} />
@@ -56,8 +56,8 @@ export default function ItemCard({commodityHeading,state,district,market,variety
                                 </Text>
                             </View>
                             <Text style={styles.ratesValue}>
-                                {minPrice} ₹/
-                                <Text style={{fontWeight:'bold'}}>Q</Text>
+                                {minPrice/selectedUnit} ₹/
+                                <Text style={{fontWeight:'bold'}}>{selectedUnit === 100?'Kg':'Q'}</Text>
                             </Text>
                         </View>
                         <View style={styles.rateArea}>
@@ -67,8 +67,8 @@ export default function ItemCard({commodityHeading,state,district,market,variety
                                 </Text>
                             </View>
                             <Text style={styles.ratesValue}>
-                                {avgPrice} ₹/
-                                <Text style={{fontWeight:'bold'}}>Q</Text>
+                                {avgPrice/selectedUnit} ₹/
+                                <Text style={{fontWeight:'bold'}}>{selectedUnit === 100?'Kg':'Q'}</Text>
                             </Text>
                         </View>
                         <View style={styles.rateArea}>
@@ -78,8 +78,8 @@ export default function ItemCard({commodityHeading,state,district,market,variety
                                 </Text>
                             </View>
                             <Text style={styles.ratesValue}>
-                                {maxPrice} ₹/
-                                <Text style={{fontWeight:'bold'}}>Q</Text>
+                                {maxPrice/selectedUnit} ₹/
+                                <Text style={{fontWeight:'bold'}}>{selectedUnit === 100?'Kg':'Q'}</Text>
                             </Text>
                         </View>
                     </View>

@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { APIKEY } from '@env';
 import { scale } from "react-native-size-matters";
 import ItemCard from "../components/ItemCards";
@@ -11,8 +11,31 @@ const storage = new MMKV();
 
 export default function HomeScreen() {
     const [data, setData] = useState([]);
-    const {userLocation } = useContext(AppContext);
+    const [filteredData, setFilteredData] = useState([]);
+    const [searchText, setSearchText] = useState('');
+    const { userLocation, selectedUnit, setUnit } = useContext(AppContext);
     // const URL = `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=${APIKEY}&format=json&filters[state]=${userLocation.state}&filters[district]=${userLocation.state_district}&limit=100`;
+    function fuzzySearchAndReorder(items, input) {
+        const chars = input.toLowerCase().split("");
+        if (chars.length === 0) {
+            setFilteredData(data);
+            return;
+        }
+        setFilteredData(
+            [...items].sort((a, b) => {
+                const aName = a.commodity.toLowerCase();
+                const bName = b.commodity.toLowerCase();
+
+                const aMatchCount = chars.filter(char => aName.includes(char)).length;
+                const bMatchCount = chars.filter(char => bName.includes(char)).length;
+
+                return bMatchCount - aMatchCount;
+            })
+        );
+    }
+
+
+
     async function fetchData(url) {
         const cacheDataKey = 'cacheDataKey91';
 
@@ -20,8 +43,9 @@ export default function HomeScreen() {
 
         if (cachedDataExists) {
             const { timeStamp, cachedData } = JSON.parse(cachedDataExists);
-            if ( Date.now() - timeStamp < 12 * 60 * 60 * 1000) {
+            if (Date.now() - timeStamp < 12 * 60 * 60 * 1000) {
                 setData(cachedData);
+                setFilteredData(cachedData)
                 return;
             }
         }
@@ -29,8 +53,9 @@ export default function HomeScreen() {
         try {
             let response = await fetch(url);
             response = await response.json();
-            storage.set(cacheDataKey,JSON.stringify({timeStamp:Date.now(),cachedData:response.records}))
+            storage.set(cacheDataKey, JSON.stringify({ timeStamp: Date.now(), cachedData: response.records }))
             setData(response?.records);
+            setFilteredData(response?.records);
         }
         catch (error) {
             Alert.alert(String(error));
@@ -45,49 +70,40 @@ export default function HomeScreen() {
     }, [userLocation]);
     return (
         <View style={styles.container}>
-            {/* Address Bar */}
-            {/* <TouchableOpacity activeOpacity={0.75}>
-                <View style={styles.addressContainer}>
-                    {
-                        userLocation ?
-                            <>
-                                <Icon name={'location'} size={scale(20)} color={'white'} />
-                                <Text style={styles.addressHeading} numberOfLines={1}
-                                    ellipsizeMode="tail">
-                                    {`${userLocation.village},${userLocation.state_district},${userLocation.state}`}
-                                </Text>
-                                <Icon name={'create'} size={scale(20)} color={'white'} />
-                            </>
-                            :
-                            <>
-                                <Text style={styles.addressHeading}>
-                                    Obtaining address
-                                </Text>
-                                <ActivityIndicator color={'white'} size={scale(30)} />
-                            </>
-                    }
-                </View>
-            </TouchableOpacity> */}
-            {/* <Text style={styles.heading}>
-            Current Daily Price of Various Commodities from Various Markets (Mandi)
-            </Text> */}
             {/* Content */}
+
             {
                 data.length > 0 ?
-                    <FlatList data={data} renderItem={({ item }) => (
-                        <ItemCard
-                            state={item.state}
-                            district={item.district}
-                            market={item.market}
-                            variety={item.variety}
-                            commodityHeading={item.commodity}
-                            grade={item.grade}
-                            arrivalTime={item.arrival_date}
-                            minPrice={item.min_price}
-                            avgPrice={item.modal_price}
-                            maxPrice={item.max_price}
+                    <>
+                        {/* Search Bar */}
+                        <TextInput
+                            style={styles.searchBox}
+                            numberOfLines={1}
+                            placeholder="Search commodity from list"
+                            selectionColor={'gray'}
+                            placeholderTextColor={'gray'}
+                            value={searchText}
+                            onChangeText={(text) => {
+                                setSearchText(text);
+                                fuzzySearchAndReorder(filteredData, text)
+                            }}
                         />
-                    )} />
+                        <FlatList data={filteredData} renderItem={({ item }) => (
+                            <ItemCard
+                                state={item.state}
+                                district={item.district}
+                                market={item.market}
+                                variety={item.variety}
+                                commodityHeading={item.commodity}
+                                grade={item.grade}
+                                arrivalTime={item.arrival_date}
+                                minPrice={item.min_price}
+                                avgPrice={item.modal_price}
+                                maxPrice={item.max_price}
+                                selectedUnit={selectedUnit}
+                            />
+                        )} />
+                    </>
                     :
                     <View style={styles.loadingScreen}>
 
@@ -105,24 +121,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         alignItems: 'center',
     },
-    // addressContainer: {
-    //     backgroundColor: 'green',
-    //     height: scale(40),
-    //     width: '95%',
-    //     alignItems: 'center',
-    //     justifyContent: 'space-evenly',
-    //     padding: scale(2),
-    //     flexDirection: 'row',
-    //     borderRadius: scale(20),
-    //     margin:scale(5)
-    // },
-    // addressHeading: {
-    //     fontSize: scale(12.5),
-    //     color: 'white',
-    //     textAlign: 'center',
-    //     // backgroundColor:'blue',
-    //     width: '85%'
-    // },
     loadingScreen: {
         flex: 1,
         // backgroundColor:'red',
@@ -136,5 +134,16 @@ const styles = StyleSheet.create({
         // backgroundColor:'red',
         textAlign: 'center',
         fontWeight: "bold"
+    },
+    searchBox: {
+        backgroundColor: 'white',
+        height: scale(40),
+        width: '90%',
+        // borderRadius: 10,
+        borderBottomColor: 'green',
+        borderBottomWidth: 2,
+        fontSize: scale(12.5),
+        padding: scale(3),
+        margin: scale(5),
     }
 })

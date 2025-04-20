@@ -4,11 +4,11 @@ import React, { useContext } from "react";
 import HomeScreen from "../screens/HomeScreen";
 import { scale } from "react-native-size-matters";
 import Icon from 'react-native-vector-icons/Ionicons';
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import MapTesting from "../screens/MapTesting";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-native";
 import { AppContext } from "../context/context";
 import { Text } from "react-native";
+import SettingsScreen from "../screens/SettingsScreen";
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigation() {
@@ -20,9 +20,10 @@ export default function AppNavigation() {
                 {
                     tabBarStyle: {
                         backgroundColor: 'white',
-                        borderTopColor:'green',
-                        borderTopWidth:2,
-                        height: scale(90)
+                        borderTopColor: 'green',
+                        borderTopWidth: 1,
+                        paddingBottom: insets.bottom,  // ✅ Add safe bottom space
+                        height: scale(60) + insets.bottom,
                     },
                     tabBarLabelStyle: {
                         fontSize: scale(12),
@@ -31,52 +32,53 @@ export default function AppNavigation() {
                     tabBarInactiveTintColor: 'gray',
                     headerStyle: {
                         borderBottomColor: 'black',
-                        borderBottomWidth: 2,
+                        borderBottomWidth: 1,
                     },
-                    headerRight: () => {
-                        return (
-                            <TouchableOpacity activeOpacity={0.75}>
-                                <View style={styles.addressContainer}>
-                                    {
-                                        userLocation ?
-                                            <>
-                                                <Icon name={'location'} size={scale(20)} color={'white'} />
-                                                <Text style={styles.addressHeading} numberOfLines={1}
-                                                    ellipsizeMode="tail">
-                                                    {`${userLocation.village},${userLocation.state_district},${userLocation.state}`}
-                                                </Text>
-                                                <Icon name={'create'} size={scale(20)} color={'white'} />
-                                            </>
-                                            :
-                                            <>
-                                                <Text style={styles.addressHeading}>
-                                                    Obtaining address
-                                                </Text>
-                                                <ActivityIndicator color={'white'} size={scale(30)} />
-                                            </>
-                                    }
-                                </View>
-                            </TouchableOpacity>
 
-                        )
-                    }
                     // headerShown: false,
                 }
             }>
                 <Tab.Screen name="Home" component={HomeScreen} options={
                     {
-                        tabBarIcon: () => (
-                            <Icon name={'home'} size={scale(20)} color={'green'} />
+                        tabBarIcon: ({ focused }) => (
+                            <Icon name={`home${focused ? '' : '-outline'}`} size={scale(20)} color={'green'} />
+                        ),
+                        headerRight: () => {
+                            return (
+                                <TouchableOpacity activeOpacity={0.75}>
+                                    <View style={styles.addressContainer}>
+                                        {
+                                            userLocation ?
+                                                <>
+                                                    <Icon name={'location'} size={scale(20)} color={'white'} />
+                                                    <Text style={styles.addressHeading} numberOfLines={1}
+                                                        ellipsizeMode="tail">
+                                                        {`${userLocation.village},${userLocation.state_district},${userLocation.state}`}
+                                                    </Text>
+                                                    <Icon name={'create'} size={scale(20)} color={'white'} />
+                                                </>
+                                                :
+                                                <>
+                                                    <Text style={styles.addressHeading}>
+                                                        Obtaining address
+                                                    </Text>
+                                                    <ActivityIndicator color={'white'} size={scale(30)} />
+                                                </>
+                                        }
+                                    </View>
+                                </TouchableOpacity>
+
+                            )
+                        }
+                    }
+                } />
+                <Tab.Screen name="Settings" component={SettingsScreen} options={
+                    {
+                        tabBarIcon: ({ focused }) => (
+                            <Icon name={`settings${focused ? '' : '-outline'}`} size={scale(20)} color={'green'} />
                         ),
                     }
                 } />
-                {/* <tab.Screen name="Map" component={MapTesting} options={
-                        {
-                            tabBarIcon: () => (
-                                <Icon name={'search'} size={scale(20)} color={'black'} />
-                            ),
-                        }
-                    } /> */}
             </Tab.Navigator>
         </NavigationContainer>
     )
